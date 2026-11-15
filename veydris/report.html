@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Veydris | Freight budget tracker</title>
+<style>
+:root{font:16px system-ui,sans-serif;color:#e4edf5;background:#0c1724;color-scheme:dark}body{max-width:1180px;margin:auto;padding:40px 24px}h1{font-size:46px;margin:8px 0}h2{font-size:23px}p{color:#adbecf;line-height:1.65}.eyebrow{color:#65d5b4;letter-spacing:3px;font-size:13px}.panel{background:#142536;border:1px solid #2b4256;border-radius:16px;padding:25px;margin:24px 0}.controls{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}label{display:grid;gap:8px;color:#adbecf}input,select,button{font:inherit;border:1px solid #526a80;padding:12px;border-radius:7px;background:#0c1724;color:#fff;min-width:0}button{cursor:pointer;background:#286859}button:disabled{opacity:.4}.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}.value{display:block;font-size:30px;color:#fff;margin:12px 0}svg{width:100%;height:auto}a{color:#65d5b4}table{width:100%;border-collapse:collapse}td,th{text-align:left;padding:12px;border-bottom:1px solid #34485b}.table-scroll{max-height:320px;overflow:auto}#status{color:#74ddbe}@media(max-width:760px){.controls,.cards{grid-template-columns:1fr}h1{font-size:34px}}
+</style></head><body>
+<header><div class="eyebrow">VEYDRIS / RIVER FREIGHT INTELLIGENCE</div><h1>Explain the shipping budget change.</h1>
+<p>Compare two USDA observation dates at the same shipment volume. Freight estimates in USD per short ton (2,000 lb).</p></header>
+<section class="panel" aria-label="Shipment controls"><div class="controls">
+<label>Origin<select id="origin"></select></label><label>Shipment / short tons<input id="tons" type="number" min="0" step="any"></label>
+<label>Budget observation<select id="budget"></select></label><label>Comparison observation<select id="comparison"></select></label></div>
+<p id="status" role="status" aria-live="polite"></p><button id="download">Download variance CSV</button></section>
+<section class="cards" aria-label="Freight estimate results"><div class="panel">Budget estimate<strong class="value" id="before">—</strong><span id="beforeRate"></span></div>
+<div class="panel">Comparison estimate<strong class="value" id="after">—</strong><span id="afterRate"></span></div>
+<div class="panel">Budget variance<strong class="value" id="delta">—</strong><span id="percent"></span></div></section>
+<section class="panel"><h2 id="chartTitle">Freight rate history</h2><p>USD per short ton • Gaps mean unavailable quotes; no interpolation.</p><svg id="chart" viewBox="0 0 1100 350" role="img" aria-label="Freight rate history in dollars per short ton"></svg></section>
+<section class="panel"><h2>Audit the observations</h2><div class="table-scroll"><table><thead><tr><th scope="col">Observation date</th><th scope="col">USD / short ton</th><th scope="col">Quote status</th></tr></thead><tbody id="observations"></tbody></table></div></section>
+<footer><p>Bundled observation range: __RANGE__. These dates describe quotes, not report generation time. This report is a frozen snapshot and makes no live requests.</p><p>__PROVENANCE__</p>
+<p>Source: <a href="https://agtransport.usda.gov/Barge/Downbound-Grain-Barge-Rates/deqi-uken">USDA AMS, Downbound Grain Barge Rates</a>. Conversion: quote percent ÷ 100 × origin benchmark in USD/short ton. No fuel surcharges, loading, unloading, storage, insurance, demurrage or other accessorial charges are included. Market quotes are estimates, not carrier offers. Differences across origins also reflect route length.</p></footer>
+<script id="data" type="application/json">__PAYLOAD__</script>
+<script>
+'use strict';
+const data=JSON.parse(document.getElementById('data').textContent);
+const el=id=>document.getElementById(id);
+// Decimal strings become integer fractions, so money rounds like Python Decimal.
+function fraction(s){if(!/^\d+(\.\d+)?$/.test(s))throw Error('Enter a positive decimal tonnage.');const parts=s.split('.');return [BigInt(parts.join('')),10n**BigInt((parts[1]||'').length)];}
+function rounded(n,d){const sign=n<0n?-1n:1n;n=n<0n?-n:n;return sign*((n*2n+d)/(2n*d));}
+function cost(tons,rate){const [t,td]=fraction(tons),[r,rd]=fraction(rate);return rounded(t*r*100n,td*rd);}
+function fixed(cents){const sign=cents<0n?'-':'';cents=cents<0n?-cents:cents;return sign+(cents/100n)+'.'+String(cents%100n).padStart(2,'0');}
+function usd(cents){const s=fixed(cents),[whole,part]=s.split('.');return '$'+whole.replace(/\B(?=(\d{3})+(?!\d))/g,',')+'.'+part;}
+function option(parent,value,label){const o=document.createElement('option');o.value=value;o.textContent=label;parent.append(o);}
+Object.keys(data.series).forEach(name=>option(el('origin'),name,name));
+el('origin').value=data.origin;el('tons').value=data.tons;
+let csvRow;
+function draw(){
+ const origin=el('origin').value,series=data.series[origin];
+ el('chartTitle').textContent=origin+' / freight rate history';
+ const values=Object.values(series).filter(v=>v!==null).map(Number),max=Math.max(...values,1)*1.15;
+ const x=i=>80+i*980/Math.max(data.dates.length-1,1),y=v=>290-Number(v)/max*250;
+ let markup='';
+ for(let i=0;i<=4;i++){const v=max*i/4;markup+=`<line x1="80" x2="1060" y1="${y(v)}" y2="${y(v)}" stroke="#34485b"/><text x="65" y="${y(v)+5}" fill="#adbecf" text-anchor="end">$${v.toFixed(0)}</text>`;}
+ let segment=[];const flush=()=>{if(segment.length)markup+=`<polyline points="${segment.join(' ')}" fill="none" stroke="#65d5b4" stroke-width="3"/>`;segment=[];};
+ data.dates.forEach((day,i)=>{const v=series[day];if(v===null){flush();return;}segment.push(x(i)+','+y(v));markup+=`<circle cx="${x(i)}" cy="${y(v)}" r="3" fill="#65d5b4"><title>${day}: $${v}/short ton</title></circle>`;});flush();
+ markup+=`<text x="80" y="328" fill="#adbecf">${data.dates[0]}</text><text x="1060" y="328" fill="#adbecf" text-anchor="end">${data.dates.at(-1)}</text>`;
+ el('chart').innerHTML=markup;
+ el('observations').replaceChildren();
+ data.dates.forEach(day=>{const tr=document.createElement('tr');[day,series[day]===null?'—':'$'+series[day],series[day]===null?'Unavailable':'Published'].forEach(text=>{const td=document.createElement('td');td.textContent=text;tr.append(td);});el('observations').append(tr);});
+}
+function update(){
+ csvRow=null;el('download').disabled=true;
+ for(const id of ['before','after','delta','beforeRate','afterRate','percent'])el(id).textContent='—';
+ try{
+ const origin=el('origin').value,tons=el('tons').value,b=el('budget').value,c=el('comparison').value;
+ const [t]=fraction(tons);if(t<=0n)throw Error('Shipment volume must be positive.');
+ const r0=data.series[origin][b],r1=data.series[origin][c];
+ if(r0===null||r1===null)throw Error('Unavailable quote on a selected date. Choose another observation; no date substitution is used.');
+ const before=cost(tons,r0),after=cost(tons,r1),delta=after-before;
+ const [n0,d0]=fraction(r0),[n1,d1]=fraction(r1);
+ const pc=n0===0n?null:rounded((n1*d0-n0*d1)*10000n,n0*d1);
+ el('before').textContent=usd(before);el('after').textContent=usd(after);el('delta').textContent=(delta>0n?'+':'')+usd(delta);
+ el('beforeRate').textContent='$'+r0+' / short ton';el('afterRate').textContent='$'+r1+' / short ton';
+ el('percent').textContent=pc===null?'Percent change undefined: zero budget rate':fixed(pc)+'% rate change';
+ el('status').textContent=`${b} → ${c} · ${tons} short tons held constant · ${delta>0n?'Above budget':delta<0n?'Below budget':'On budget'}`;
+ csvRow={origin,budget_date:b,comparison_date:c,short_tons:tons,budget_usd_per_short_ton:r0,comparison_usd_per_short_ton:r1,budget_cost_usd:fixed(before),comparison_cost_usd:fixed(after),variance_usd:fixed(delta),percent_change:pc===null?'':fixed(pc)};
+ el('download').disabled=false;
+ }catch(error){el('status').textContent=error.message;}
+}
+function refreshDates(){const series=data.series[el('origin').value];for(const id of ['budget','comparison']){const old=el(id).value||data[id];el(id).replaceChildren();data.dates.forEach(day=>option(el(id),day,day+(series[day]===null?' / unavailable':'')));el(id).value=old;}draw();update();}
+el('origin').addEventListener('change',refreshDates);
+for(const id of ['tons','budget','comparison'])el(id).addEventListener('input',update);
+el('download').addEventListener('click',()=>{if(!csvRow)return;const quote=s=>'"'+String(s).replaceAll('"','""')+'"';const csv=Object.keys(csvRow).map(quote).join(',')+'\r\n'+Object.values(csvRow).map(quote).join(',')+'\r\n';const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download='veydris-variance.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});
+refreshDates();
+</script></body></html>

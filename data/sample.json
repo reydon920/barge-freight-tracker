@@ -1,0 +1,13 @@
+{
+  "source_url": "https://agtransport.usda.gov/api/views/deqi-uken/rows.csv?accessType=DOWNLOAD",
+  "retrieved_utc": "2026-11-15T20:28:07.700144+00:00",
+  "raw_sha256": "76816cfbcea71a05921084babaa9f2579c6ebd28ee782822dbeaeb75f10971bf",
+  "sample_sha256": "fb7773214722ea5a246ce195e7622667bf519490384cd81daecdc40a505f47ad",
+  "raw_rows": 8351,
+  "sample_rows": 371,
+  "first_observation": "2025-11-11",
+  "last_observation": "2026-11-10",
+  "selection": "All rows within 366 days of newest observation, inclusive",
+  "quote_unit": "percent of 1976 tariff",
+  "ton_unit": "short ton (2,000 lb)"
+}

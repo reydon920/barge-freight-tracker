@@ -1,0 +1,36 @@
+name: USDA refresh (seven-day maintenance window)
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '30 14 * * 3'
+permissions:
+  contents: read
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check maintenance window
+        id: window
+        shell: python
+        run: |
+          import datetime, os
+          active = datetime.date.today() <= datetime.date(2026, 11, 22)
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+              f.write(f'active={str(active).lower()}\n')
+      - if: steps.window.outputs.active == 'true'
+        run: python -m veydris --refresh
+      - if: steps.window.outputs.active == 'true'
+        run: python -m pip install -r requirements.txt
+      - if: steps.window.outputs.active == 'true'
+        run: python -m unittest -v
+      - if: steps.window.outputs.active == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: validated-usda-snapshot
+          path: |
+            data/sample.csv
+            data/sample.json
