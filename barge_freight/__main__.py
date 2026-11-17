@@ -17,7 +17,11 @@ def main():
     parser.add_argument('--output', type=Path, default=Path('output/report.html'))
     parser.add_argument('--showcase', type=Path, metavar='DIRECTORY')
     parser.add_argument('--refresh', action='store_true', help='Fetch USDA data (requires network)')
+    parser.add_argument('--doctor', action='store_true', help='Check dependencies offline and show repair commands')
     args = parser.parse_args()
+    if args.doctor:
+        from .doctor import doctor
+        parser.exit(doctor())
     try:
         if args.refresh:
             from .refresh import refresh

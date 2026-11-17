@@ -89,6 +89,30 @@ To analyze a complete download or another CSV with the same USDA schema, pass `-
 
 GitHub Actions runs offline tests and generates report artifacts on pushes and pull requests. A weekly Wednesday public-data refresh is configured for the initial maintenance window ending **2026-11-22 UTC**. It uploads a validated snapshot artifact for review and retains the checked-in snapshot if the job fails; it does not commit replacements. Scheduling starts only after the repository is published with Actions enabled, and GitHub may delay scheduled runs. After the window, extend the date in `refresh.yml` deliberately to enable future refreshes.
 
+## Dependency troubleshooting
+
+Run diagnostics with the same Python interpreter you use for the app:
+
+```powershell
+.venv\Scripts\python.exe -m barge_freight --doctor
+```
+
+On macOS/Linux, use `.venv/bin/python -m barge_freight --doctor`.
+The command shows the active interpreter, checks Python 3.12 and Matplotlib
+(`>=3.9,<4`), and renders a tiny PNG in memory to catch broken chart dependencies.
+It works even when Matplotlib is missing. A failed check includes details and,
+for chart failures, an install command using that exact interpreter. In PowerShell,
+prefix a quoted executable path with `&`. Run the suggested command yourself if
+you want to install dependencies; installation requires access to a package source.
+
+Diagnostics use no network, install nothing, and leave your data and reports
+untouched. Chart caches go in a temporary directory that is removed afterward.
+Exit status is **0** when all checks pass and **1** when attention is needed.
+`--doctor` takes priority over `--refresh` and report options, so combining them
+only runs diagnostics. Missing chart dependencies do not prevent the calculator,
+CSV export or offline HTML report from working; they are only needed for `--showcase`.
+Node.js is optional for browser logic tests and is not required by the application.
+
 ## Tests and interview walkthrough
 
 ```powershell
