@@ -1,9 +1,9 @@
-![Veydris](assets/banner.png)
+![Barge Freight Tracker](assets/banner.png)
 Barge Freight Budget Tracker — explain a shipping budget change using public USDA river freight rates.
 
-# Veydris
+# Barge Freight Tracker
 
-How much has river freight changed your shipping budget? Veydris turns weekly percent-of-tariff quotes into freight estimates, compares two exact observation dates at a fixed shipment volume, and exports an offline interactive HTML report and variance CSV.
+How much has river freight changed your shipping budget? Barge Freight Tracker turns weekly percent-of-tariff quotes into freight estimates, compares two exact observation dates at a fixed shipment volume, and exports an offline interactive HTML report and variance CSV.
 
 A grain logistics analyst can use it to explain the rate portion of a budget change. Every result states the dates and units used. Missing quotes stay unavailable, so a report cannot silently substitute a different week.
 
@@ -17,27 +17,18 @@ Windows PowerShell, from the project folder:
 python -m venv .venv
 .venv\Scripts\python.exe -m pip install -r requirements.txt
 .venv\Scripts\python.exe -m unittest -v
-.venv\Scripts\python.exe -m veydris
+.venv\Scripts\python.exe -m barge_freight
 Start-Process output/report.html
 ```
 
 On macOS/Linux, use `python3 -m venv .venv`, then replace `.venv\Scripts\python.exe` with `.venv/bin/python` in the commands above. Open `output/report.html` in your browser.
-
-For an automated runner that launches commands directly, use the full path to the project's Python executable. In this workspace, the exact commands are (run from the project folder; no environment activation needed):
-
-```text
-C:/Users/Rohit/Portfolio/veydris/.venv/Scripts/python.exe -m unittest -v
-C:/Users/Rohit/Portfolio/veydris/.venv/Scripts/python.exe -m veydris --output docs/report.html --showcase docs/showcase
-```
-
-`WinError 2` means the runner could not find an executable or path. Windows virtual environments put Python in `Scripts/python.exe`; macOS/Linux environments use `bin/python`. Create the environment and install requirements first. If you move or clone the project elsewhere, replace the full path with that checkout's interpreter path. A runner should pass the executable and arguments separately, without PowerShell's `&` prefix or activation commands. Using system Python instead can fail with `ModuleNotFoundError: matplotlib`, because dependencies are installed in the project environment. CI checks both Windows and Linux using the Python interpreter selected by setup-python.
 
 The [bundled report](docs/report.html) can also be downloaded and opened directly. It contains its own data, styles, scripts and SVG chart; it uses no CDN. Select an origin, enter short tons, choose observation dates, and download the resulting variance CSV. The observation table and date menus identify unavailable quotes explicitly.
 
 ### Example
 
 ```powershell
-.venv\Scripts\python.exe -m veydris --origin "St. Louis" --tons 1500 --budget 2026-11-03 --comparison 2026-11-10
+.venv\Scripts\python.exe -m barge_freight --origin "St. Louis" --tons 1500 --budget 2026-11-03 --comparison 2026-11-10
 ```
 
 ```text
@@ -54,7 +45,7 @@ The negative variance means the comparison estimate is **$948.62 below budget**,
 Regenerate all three 1,440 × 780 PNGs and the bundled HTML report offline:
 
 ```powershell
-.venv\Scripts\python.exe -m veydris --output docs/report.html --showcase docs/showcase
+.venv\Scripts\python.exe -m barge_freight --output docs/report.html --showcase docs/showcase
 ```
 
 ![Freight budget comparison](docs/showcase/budget-variance.png)
@@ -89,7 +80,7 @@ The bundled public snapshot has **371 records**, seven origins, and 21 missing q
 Fetch the complete public export and replace the dated demo sample:
 
 ```powershell
-.venv\Scripts\python.exe -m veydris --refresh
+.venv\Scripts\python.exe -m barge_freight --refresh
 ```
 
 This is the only command that needs network access. Full downloads go in gitignored `data/raw/`. The refresh validates the complete export, then keeps all rows from the latest 366-day window. Download or validation failure leaves the previous sample intact. Historical committed versions remain available through Git. Inspect the source metadata and rerun tests and showcase generation before adopting a refresh.

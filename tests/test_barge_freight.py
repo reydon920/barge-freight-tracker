@@ -16,10 +16,10 @@ from decimal import Decimal
 from pathlib import Path
 from unittest.mock import patch
 
-from veydris.core import (BENCHMARKS, SAMPLE, Observation, compare,
+from barge_freight.core import (BENCHMARKS, SAMPLE, Observation, compare,
                           dollars_per_ton, load, money, write_csv, timeline)
-from veydris.refresh import publish
-from veydris.report import report
+from barge_freight.refresh import publish
+from barge_freight.report import report
 
 FIXTURE = Path(__file__).with_name('fixtures') / 'usda-2026-11-15.csv'
 
@@ -147,7 +147,7 @@ class FreightTests(unittest.TestCase):
                     raise PermissionError('Simulated metadata publication failure')
                 return replace(source, destination)
 
-            with patch('veydris.refresh.os.replace', side_effect=fail_metadata):
+            with patch('barge_freight.refresh.os.replace', side_effect=fail_metadata):
                 with self.assertRaises(PermissionError):
                     publish(original.replace(b'548.21', b'548.22'), path)
             self.assertEqual(path.read_bytes(), original)
@@ -155,7 +155,7 @@ class FreightTests(unittest.TestCase):
 
     def test_cli_creates_report(self):
         with workspace_temp() as tmp:
-            result = subprocess.run([sys.executable, '-m', 'veydris', '--data', str(FIXTURE), '--budget', '2026-11-03',
+            result = subprocess.run([sys.executable, '-m', 'barge_freight', '--data', str(FIXTURE), '--budget', '2026-11-03',
                                      '--comparison', '2026-11-10', '--output', str(Path(tmp)/'report.html')],
                                     capture_output=True, text=True)
             self.assertEqual(result.returncode, 0, result.stderr)
@@ -191,7 +191,7 @@ class FreightTests(unittest.TestCase):
 
     def test_showcase_images(self):
         import struct
-        from veydris.showcase import showcase
+        from barge_freight.showcase import showcase
         with workspace_temp() as tmp, patch('urllib.request.urlopen', side_effect=AssertionError('network forbidden')):
             estimate = compare(self.records, 'St. Louis', 1500, '2026-11-03', '2026-11-10')
             showcase(self.records, estimate, tmp)

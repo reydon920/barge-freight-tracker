@@ -1,10 +1,10 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Veydris | Freight budget tracker</title>
+<title>Barge Freight Tracker | Freight budget tracker</title>
 <style>
 :root{font:16px system-ui,sans-serif;color:#e4edf5;background:#0c1724;color-scheme:dark}body{max-width:1180px;margin:auto;padding:40px 24px}h1{font-size:46px;margin:8px 0}h2{font-size:23px}p{color:#adbecf;line-height:1.65}.eyebrow{color:#65d5b4;letter-spacing:3px;font-size:13px}.panel{background:#142536;border:1px solid #2b4256;border-radius:16px;padding:25px;margin:24px 0}.controls{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}label{display:grid;gap:8px;color:#adbecf}input,select,button{font:inherit;border:1px solid #526a80;padding:12px;border-radius:7px;background:#0c1724;color:#fff;min-width:0}button{cursor:pointer;background:#286859}button:disabled{opacity:.4}.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}.value{display:block;font-size:30px;color:#fff;margin:12px 0}svg{width:100%;height:auto}a{color:#65d5b4}table{width:100%;border-collapse:collapse}td,th{text-align:left;padding:12px;border-bottom:1px solid #34485b}.table-scroll{max-height:320px;overflow:auto}#status{color:#74ddbe}@media(max-width:760px){.controls,.cards{grid-template-columns:1fr}h1{font-size:34px}}
 </style></head><body>
-<header><div class="eyebrow">VEYDRIS / RIVER FREIGHT INTELLIGENCE</div><h1>Explain the shipping budget change.</h1>
+<header><div class="eyebrow">BARGE FREIGHT TRACKER / RIVER FREIGHT INTELLIGENCE</div><h1>Explain the shipping budget change.</h1>
 <p>Compare two USDA observation dates at the same shipment volume. Freight estimates in USD per short ton (2,000 lb).</p></header>
 <section class="panel" aria-label="Shipment controls"><div class="controls">
 <label>Origin<select id="origin"></select></label><label>Shipment / short tons<input id="tons" type="number" min="0" step="any"></label>
@@ -68,6 +68,6 @@ function update(){
 function refreshDates(){const series=data.series[el('origin').value];for(const id of ['budget','comparison']){const old=el(id).value||data[id];el(id).replaceChildren();data.dates.forEach(day=>option(el(id),day,day+(series[day]===null?' / unavailable':'')));el(id).value=old;}draw();update();}
 el('origin').addEventListener('change',refreshDates);
 for(const id of ['tons','budget','comparison'])el(id).addEventListener('input',update);
-el('download').addEventListener('click',()=>{if(!csvRow)return;const quote=s=>'"'+String(s).replaceAll('"','""')+'"';const csv=Object.keys(csvRow).map(quote).join(',')+'\r\n'+Object.values(csvRow).map(quote).join(',')+'\r\n';const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download='veydris-variance.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});
+el('download').addEventListener('click',()=>{if(!csvRow)return;const quote=s=>'"'+String(s).replaceAll('"','""')+'"';const csv=Object.keys(csvRow).map(quote).join(',')+'\r\n'+Object.values(csvRow).map(quote).join(',')+'\r\n';const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download='barge_freight-variance.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});
 refreshDates();
 </script></body></html>

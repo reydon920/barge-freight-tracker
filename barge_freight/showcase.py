@@ -34,7 +34,7 @@ def showcase(records, estimate, directory):
 
     fig, ax = plt.subplots(figsize=(12, 6.5))
     fig.subplots_adjust(left=.09, right=.95, top=.78, bottom=.22)
-    fig.text(.07, .92, 'VEYDRIS / THE COST OF A RATE CHANGE', color='#65d5b4', fontsize=12)
+    fig.text(.07, .92, 'BARGE FREIGHT TRACKER / THE COST OF A RATE CHANGE', color='#65d5b4', fontsize=12)
     fig.text(.07, .85, f'{estimate.origin}: ${estimate.variance_usd:+,.2f} against budget', fontsize=24, weight='bold')
     costs = [float(estimate.budget_cost_usd), float(estimate.comparison_cost_usd)]
     bars = ax.bar(['Budget\n'+estimate.budget_date, 'Comparison\n'+estimate.comparison_date], costs,
@@ -50,7 +50,7 @@ def showcase(records, estimate, directory):
 
     fig, ax = plt.subplots(figsize=(12, 6.5))
     fig.subplots_adjust(left=.09, right=.95, top=.78, bottom=.22)
-    fig.text(.07, .92, 'VEYDRIS / QUOTE HISTORY', color='#65d5b4', fontsize=12)
+    fig.text(.07, .92, 'BARGE FREIGHT TRACKER / QUOTE HISTORY', color='#65d5b4', fontsize=12)
     fig.text(.07, .85, f'{estimate.origin}: put the weekly change in context', fontsize=23, weight='bold')
     dates = timeline(records)
     # Include every source observation date so a missing quote breaks the line.
@@ -86,7 +86,7 @@ def showcase(records, estimate, directory):
     ax.set_xlabel('Estimated freight / USD per short ton')
     ax.grid(axis='x', alpha=.4)
     ax.set_axisbelow(True)
-    fig.text(.07, .92, 'VEYDRIS / SEVEN ORIGINS, EXPLICIT UNITS', color='#65d5b4', fontsize=12)
+    fig.text(.07, .92, 'BARGE FREIGHT TRACKER / SEVEN ORIGINS, EXPLICIT UNITS', color='#65d5b4', fontsize=12)
     fig.text(.07, .85, f'Compare freight estimates on {latest}', fontsize=24, weight='bold')
     finish(fig, 'origin-rates.png',
            'Different origins cover different river distances; these are not interchangeable routes.\nSource: USDA AMS • Freight estimates only; no accessorial charges included')

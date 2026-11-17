@@ -1,4 +1,4 @@
-"""Run with python -m veydris; the default run uses bundled public data."""
+"""Run with python -m barge_freight; the default run uses bundled public data."""
 
 import argparse
 from pathlib import Path
@@ -8,7 +8,7 @@ from .report import report
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Veydris | Barge Freight Budget Tracker')
+    parser = argparse.ArgumentParser(description='Barge Freight Tracker | Barge Freight Budget Tracker')
     parser.add_argument('--data', type=Path, default=SAMPLE)
     parser.add_argument('--origin', choices=BENCHMARKS, default='St. Louis')
     parser.add_argument('--tons', default='1500', help='Shipment volume in short tons (2,000 lb)')
@@ -44,7 +44,7 @@ def main():
             from .showcase import showcase
             showcase(records, estimate, args.showcase)
     except (ValueError, OSError, KeyError) as exc:
-        parser.exit(2, f'Veydris: {exc}\n')
+        parser.exit(2, f'Barge Freight Tracker: {exc}\n')
 
 
 if __name__ == '__main__':
