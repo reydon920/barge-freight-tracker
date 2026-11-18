@@ -24,6 +24,7 @@ class DoctorTests(unittest.TestCase):
         self.assertIn('Matplotlib', result.stdout)
         self.assertIn('FAIL', result.stdout)
         self.assertIn('-m pip install -r', result.stdout)
+        self.assertIn('-m ensurepip --upgrade', result.stdout)
         self.assertIn('standard library', result.stdout)
 
     def test_doctor_precedes_data_and_network_actions(self):
@@ -32,6 +33,9 @@ class DoctorTests(unittest.TestCase):
                                 '--data', 'does-not-exist.csv']), \
                 patch('barge_freight.__main__.load', side_effect=AssertionError('data read')), \
                 patch('urllib.request.urlopen', side_effect=AssertionError('network')), \
+                patch('barge_freight.doctor.sys.version_info', (3, 12, 0)), \
+                patch('barge_freight.doctor.subprocess.run',
+                      return_value=subprocess.CompletedProcess([], 0, 'Matplotlib 3.9.0', '')), \
                 redirect_stdout(output):
             with self.assertRaises(SystemExit) as exit:
                 main()
@@ -62,6 +66,29 @@ class DoctorTests(unittest.TestCase):
             self.assertEqual(doctor(), 1)
         self.assertIn('FAIL: Python', output.getvalue())
         self.assertIn('virtual environment with Python 3.12', output.getvalue())
+
+    def test_chart_repair_checks_pip_with_the_active_interpreter(self):
+        for pip_result in [subprocess.CompletedProcess([], 0, 'pip 25.0', ''),
+                           subprocess.CompletedProcess([], 1, '', 'No module named pip'),
+                           subprocess.TimeoutExpired('pip check', 30),
+                           OSError('could not start pip')]:
+            with self.subTest(pip_result=pip_result), redirect_stdout(StringIO()) as output:
+                with patch('barge_freight.doctor.subprocess.run', side_effect=[
+                        subprocess.CompletedProcess([], 1, '', 'broken chart dependency'),
+                        pip_result]) as run:
+                    self.assertEqual(doctor(), 1)
+                self.assertEqual(run.call_count, 2)
+                command = run.call_args.args[0]
+                self.assertEqual(command[0], sys.executable)
+                self.assertEqual(command[-3:], ['-m', 'pip', '--version'])
+                self.assertEqual(run.call_args.kwargs['timeout'], 30)
+                self.assertIn('-m pip install -r', output.getvalue())
+                if isinstance(pip_result, subprocess.CompletedProcess) and pip_result.returncode == 0:
+                    self.assertIn('pip 25.0', output.getvalue())
+                    self.assertNotIn('ensurepip', output.getvalue())
+                else:
+                    self.assertIn('-m ensurepip --upgrade', output.getvalue())
+                    self.assertIn('Python 3.12', output.getvalue())
 
     def test_chart_check_timeout_is_actionable(self):
         output = StringIO()

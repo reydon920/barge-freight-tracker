@@ -105,6 +105,13 @@ for chart failures, an install command using that exact interpreter. In PowerShe
 prefix a quoted executable path with `&`. Run the suggested command yourself if
 you want to install dependencies; installation requires access to a package source.
 
+When the chart check fails, diagnostics also run `pip --version` with the same
+interpreter. If pip is missing, broken or cannot finish, the output suggests
+`-m ensurepip --upgrade` before the install command. This restores Python's bundled
+pip when available; otherwise, recreate the environment with a Python 3.12
+distribution that includes pip. Both commands are suggestions for you to run.
+The pip probe is offline and has a 30-second timeout, as does the chart probe.
+
 Diagnostics use no network, install nothing, and leave your data and reports
 untouched. Chart caches go in a temporary directory that is removed afterward.
 Exit status is **0** when all checks pass and **1** when attention is needed.

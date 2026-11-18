@@ -46,12 +46,12 @@ def doctor():
     if not python_ok:
         print('Create a virtual environment with Python 3.12 and rerun --doctor there.')
     chart_ok = False
+    command = [sys.executable]
+    if sys.flags.no_site:
+        command.append('-S')
     try:
         with chart_cache() as cache:
             environment = dict(os.environ, MPLCONFIGDIR=cache, MPLBACKEND='Agg')
-            command = [sys.executable]
-            if sys.flags.no_site:
-                command.append('-S')
             result = subprocess.run(command + ['-c', CHART_CHECK], env=environment,
                                     capture_output=True, text=True, timeout=30)
             chart_ok = result.returncode == 0
@@ -65,6 +65,21 @@ def doctor():
         print(f'FAIL: Matplotlib check could not finish: {exc}')
     if not chart_ok:
         requirements = Path(__file__).resolve().parent.parent / 'requirements.txt'
+        try:
+            pip = subprocess.run(command + ['-m', 'pip', '--version'],
+                                 capture_output=True, text=True, timeout=30)
+            pip_ok = pip.returncode == 0
+            print(f'{"OK" if pip_ok else "FAIL"}: pip for this interpreter')
+            detail = pip.stdout if pip_ok else pip.stderr
+            if detail.strip():
+                print(detail.strip())
+        except (OSError, subprocess.TimeoutExpired) as exc:
+            pip_ok = False
+            print(f'FAIL: pip check could not finish: {exc}')
+        if not pip_ok:
+            print('Try restoring bundled pip before installing chart dependencies:')
+            print(f'"{sys.executable}" -m ensurepip --upgrade')
+            print('If ensurepip is unavailable, recreate the environment with a Python 3.12 distribution that includes pip.')
         print('Install or repair chart dependencies with this interpreter:')
         print(f'"{sys.executable}" -m pip install -r "{requirements}"')
         print('In PowerShell, prefix the quoted interpreter path with &.')
