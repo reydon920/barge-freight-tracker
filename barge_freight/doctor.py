@@ -53,7 +53,8 @@ def doctor():
         with chart_cache() as cache:
             environment = dict(os.environ, MPLCONFIGDIR=cache, MPLBACKEND='Agg')
             result = subprocess.run(command + ['-c', CHART_CHECK], env=environment,
-                                    capture_output=True, text=True, timeout=30)
+                                    capture_output=True, text=True,
+                                    errors='backslashreplace', timeout=30)
             chart_ok = result.returncode == 0
             print(f'{"OK" if chart_ok else "FAIL"}: Matplotlib >=3.9,<4 and headless PNG rendering')
             if result.stdout.strip():
@@ -67,7 +68,8 @@ def doctor():
         requirements = Path(__file__).resolve().parent.parent / 'requirements.txt'
         try:
             pip = subprocess.run(command + ['-m', 'pip', '--version'],
-                                 capture_output=True, text=True, timeout=30)
+                                 capture_output=True, text=True,
+                                 errors='backslashreplace', timeout=30)
             pip_ok = pip.returncode == 0
             print(f'{"OK" if pip_ok else "FAIL"}: pip for this interpreter')
             detail = pip.stdout if pip_ok else pip.stderr

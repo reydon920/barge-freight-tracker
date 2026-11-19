@@ -98,6 +98,26 @@ class DoctorTests(unittest.TestCase):
         self.assertIn('could not finish', output.getvalue())
         self.assertIn('-m pip install -r', output.getvalue())
 
+    def test_unreadable_probe_output_preserves_repair_guidance(self):
+        run_subprocess = subprocess.run
+
+        def failing_probe(command, **kwargs):
+            # Read the real child output with a known encoding on every platform.
+            detail = b'chart import failed' if '-c' in command else b'pip failed'
+            error_bytes = detail + bytes([255])
+            script = f'import sys\nsys.stderr.buffer.write({error_bytes!r})\nsys.exit(1)'
+            return run_subprocess([command[0], '-c', script], **kwargs, encoding='utf-8')
+
+        output = StringIO()
+        with patch('barge_freight.doctor.subprocess.run', side_effect=failing_probe), \
+                redirect_stdout(output):
+            self.assertEqual(doctor(), 1)
+        self.assertIn('chart import failed', output.getvalue())
+        self.assertIn('pip failed', output.getvalue())
+        self.assertIn(r'\xff', output.getvalue())
+        self.assertIn('-m ensurepip --upgrade', output.getvalue())
+        self.assertIn('-m pip install -r', output.getvalue())
+
     def test_cache_cleanup_failure_returns_failure(self):
         output = StringIO()
         with patch('barge_freight.doctor.chart_cache') as temporary, \

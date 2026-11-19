@@ -11,6 +11,8 @@ A grain logistics analyst can use it to explain the rate portion of a budget cha
 
 Requires Python 3.12. Only chart generation needs a third-party package: Matplotlib. The calculator, downloader and HTML report use Python's standard library. No API key, server, account or live request is needed for the demo.
 
+If setup or chart generation fails, run [the offline dependency check](#dependency-troubleshooting).
+
 Windows PowerShell, from the project folder:
 
 ```powershell
@@ -111,6 +113,8 @@ interpreter. If pip is missing, broken or cannot finish, the output suggests
 pip when available; otherwise, recreate the environment with a Python 3.12
 distribution that includes pip. Both commands are suggestions for you to run.
 The pip probe is offline and has a 30-second timeout, as does the chart probe.
+If either probe emits bytes your Python interpreter cannot decode, the command
+shows them as escapes such as `\xff` and still prints the repair steps.
 
 Diagnostics use no network, install nothing, and leave your data and reports
 untouched. Chart caches go in a temporary directory that is removed afterward.
