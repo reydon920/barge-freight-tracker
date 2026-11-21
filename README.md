@@ -27,6 +27,8 @@ On macOS/Linux, use `python3 -m venv .venv`, then replace `.venv\Scripts\python.
 
 The [bundled report](docs/report.html) can also be downloaded and opened directly. It contains its own data, styles, scripts and SVG chart; it uses no CDN. Select an origin, enter short tons, choose observation dates, and download the resulting variance CSV. The observation table and date menus identify unavailable quotes explicitly.
 
+The report header shows when the snapshot was retrieved (UTC) and how many full days have elapsed since then, using your device clock when you open the report. This works offline. The observation dates still tell you when USDA recorded the quotes.
+
 ### Example
 
 ```powershell
@@ -87,7 +89,7 @@ Fetch the complete public export and replace the dated demo sample:
 
 This is the only command that needs network access. Full downloads go in gitignored `data/raw/`. The refresh validates the complete export, then keeps all rows from the latest 366-day window. Download or validation failure leaves the previous sample intact. Historical committed versions remain available through Git. Inspect the source metadata and rerun tests and showcase generation before adopting a refresh.
 
-To analyze a complete download or another CSV with the same USDA schema, pass `--data data/raw/usda.csv`. Custom CSVs without a matching metadata checksum are labeled as having unverified retrieval time. Dates absent from an origin are unavailable; expected weekly gaps are included in report menus and charts without filling rates.
+To analyze a complete download or another CSV with the same USDA schema, pass `--data data/raw/usda.csv`. The report shows snapshot age as unavailable when the CSV lacks matching metadata with a valid retrieval timestamp. Dates absent from an origin are unavailable; expected weekly gaps are included in report menus and charts without filling rates.
 
 GitHub Actions runs offline tests and generates report artifacts on pushes and pull requests. A weekly Wednesday public-data refresh is configured for the initial maintenance window ending **2026-11-22 UTC**. It uploads a validated snapshot artifact for review and retains the checked-in snapshot if the job fails; it does not commit replacements. Scheduling starts only after the repository is published with Actions enabled, and GitHub may delay scheduled runs. After the window, extend the date in `refresh.yml` deliberately to enable future refreshes.
 

@@ -3,9 +3,11 @@
 <title>Barge Freight Tracker | Freight budget tracker</title>
 <style>
 :root{font:16px system-ui,sans-serif;color:#e4edf5;background:#0c1724;color-scheme:dark}body{max-width:1180px;margin:auto;padding:40px 24px}h1{font-size:46px;margin:8px 0}h2{font-size:23px}p{color:#adbecf;line-height:1.65}.eyebrow{color:#65d5b4;letter-spacing:3px;font-size:13px}.panel{background:#142536;border:1px solid #2b4256;border-radius:16px;padding:25px;margin:24px 0}.controls{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}label{display:grid;gap:8px;color:#adbecf}input,select,button{font:inherit;border:1px solid #526a80;padding:12px;border-radius:7px;background:#0c1724;color:#fff;min-width:0}button{cursor:pointer;background:#286859}button:disabled{opacity:.4}.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}.value{display:block;font-size:30px;color:#fff;margin:12px 0}svg{width:100%;height:auto}a{color:#65d5b4}table{width:100%;border-collapse:collapse}td,th{text-align:left;padding:12px;border-bottom:1px solid #34485b}.table-scroll{max-height:320px;overflow:auto}#status{color:#74ddbe}@media(max-width:760px){.controls,.cards{grid-template-columns:1fr}h1{font-size:34px}}
+.snapshot{background:#142536;border-left:3px solid #65d5b4;border-radius:7px;padding:12px 16px}.snapshot strong{color:#65d5b4}
 </style></head><body>
 <header><div class="eyebrow">BARGE FREIGHT TRACKER / RIVER FREIGHT INTELLIGENCE</div><h1>Explain the shipping budget change.</h1>
-<p>Compare two USDA observation dates at the same shipment volume. Freight estimates in USD per short ton (2,000 lb).</p></header>
+<p>Compare two USDA observation dates at the same shipment volume. Freight estimates in USD per short ton (2,000 lb).</p>
+<p class="snapshot">Snapshot age: <strong id="snapshot-age">Unavailable</strong>__SNAPSHOT_RETRIEVAL__</p></header>
 <section class="panel" aria-label="Shipment controls"><div class="controls">
 <label>Origin<select id="origin"></select></label><label>Shipment / short tons<input id="tons" type="number" min="0" step="any"></label>
 <label>Budget observation<select id="budget"></select></label><label>Comparison observation<select id="comparison"></select></label></div>
@@ -22,6 +24,11 @@
 'use strict';
 const data=JSON.parse(document.getElementById('data').textContent);
 const el=id=>document.getElementById(id);
+const elapsed=Date.now()-Date.parse(el('snapshot-retrieved')?.dateTime);
+if(Number.isFinite(elapsed)&&elapsed>=0){
+ const days=Math.floor(elapsed/(24*60*60*1000));
+ el('snapshot-age').textContent=days===0?'Less than 1 day':days===1?'1 day':days+' days';
+}
 // Decimal strings become integer fractions, so money rounds like Python Decimal.
 function fraction(s){if(!/^\d+(\.\d+)?$/.test(s))throw Error('Enter a positive decimal tonnage.');const parts=s.split('.');return [BigInt(parts.join('')),10n**BigInt((parts[1]||'').length)];}
 function rounded(n,d){const sign=n<0n?-1n:1n;n=n<0n?-n:n;return sign*((n*2n+d)/(2n*d));}

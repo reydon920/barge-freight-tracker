@@ -14,6 +14,11 @@ class Element {
 const elements = {};
 const get = id => elements[id] ??= new Element();
 get('data').textContent = html.match(/<script id="data" type="application\/json">([\s\S]*?)<\/script>/)[1];
+const header = html.split('</header>', 1)[0];
+const retrieval = header.match(/<time id="snapshot-retrieved" datetime="([^"]+)">([^<]+)<\/time>/);
+assert.ok(retrieval, 'Show the verified retrieval date in the header');
+assert.equal(retrieval[2], '2026-11-15');
+get('snapshot-retrieved').dateTime = retrieval[1];
 let downloaded = '';
 const context = vm.createContext({
   document: {getElementById: get, createElement: () => new Element()},
@@ -21,7 +26,9 @@ const context = vm.createContext({
   URL: {createObjectURL: () => 'blob:offline-test', revokeObjectURL: () => {}},
   setTimeout: action => action(), console,
 });
+vm.runInContext("Date.now = () => Date.parse('2026-11-18T01:00:00Z')", context);
 vm.runInContext(html.match(/<script>\s*([\s\S]*?)<\/script>/)[1], context);
+assert.equal(get('snapshot-age').textContent, '2 days');
 for (const item of cases) {
   get('origin').value = item.origin;
   get('tons').value = item.short_tons;

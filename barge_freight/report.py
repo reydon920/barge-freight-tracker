@@ -3,7 +3,7 @@
 import html
 import hashlib
 import json
-from datetime import date
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 from .core import BENCHMARKS, SAMPLE, dollars_per_ton, timeline, number
@@ -25,12 +25,28 @@ def report(records, path, origin, tons, budget, comparison, source=SAMPLE):
     # JSON lives in a script element; escaping '<' prevents closing-tag injection.
     rendered = template.replace('__PAYLOAD__', json.dumps(payload).replace('<', '\\u003c'))
     rendered = rendered.replace('__RANGE__', html.escape(f'{dates[0]} to {dates[-1]}'))
-    provenance = 'Custom data: retrieval time is not verified.'
+    provenance = 'Source retrieval time is not verified.'
+    snapshot_retrieval = ''
     source = Path(source)
-    if source.with_suffix('.json').exists():
+    try:
         metadata = json.loads(source.with_suffix('.json').read_text(encoding='utf-8'))
-        if metadata.get('sample_sha256') == hashlib.sha256(source.read_bytes()).hexdigest():
-            provenance = f"Source retrieved UTC: {metadata['retrieved_utc']}. Data SHA-256: {metadata['sample_sha256']}."
+    except (OSError, ValueError):
+        metadata = None
+    if isinstance(metadata, dict) and metadata.get('sample_sha256') == hashlib.sha256(source.read_bytes()).hexdigest():
+        timestamp = metadata.get('retrieved_utc')
+        try:
+            retrieved = datetime.fromisoformat(timestamp) if isinstance(timestamp, str) else None
+            if retrieved is not None and retrieved.tzinfo is not None:
+                retrieved = retrieved.astimezone(timezone.utc)
+                browser_timestamp = retrieved.isoformat(timespec='milliseconds')
+                snapshot_retrieval = (
+                    f' &middot; Retrieved <time id="snapshot-retrieved" datetime="{browser_timestamp}">'
+                    f'{retrieved.date()}</time> UTC'
+                )
+                provenance = f"Source retrieved UTC: {retrieved.isoformat()}. Data SHA-256: {metadata['sample_sha256']}."
+        except (ValueError, OverflowError):
+            pass
+    rendered = rendered.replace('__SNAPSHOT_RETRIEVAL__', snapshot_retrieval)
     rendered = rendered.replace('__PROVENANCE__', html.escape(provenance))
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)

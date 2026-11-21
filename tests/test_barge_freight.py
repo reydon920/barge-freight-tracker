@@ -170,6 +170,29 @@ class FreightTests(unittest.TestCase):
                                 path.read_text(encoding='utf-8')).group(1)
             self.assertEqual(json.loads(payload)['tons'], '1000')
 
+    def test_report_snapshot_age_requires_matching_timestamp_metadata(self):
+        with workspace_temp() as tmp:
+            source = tmp / 'custom.csv'
+            source.write_bytes(FIXTURE.read_bytes())
+            checksum = hashlib.sha256(source.read_bytes()).hexdigest()
+            timestamp = '2026-11-15T20:28:07+00:00'
+            for metadata in (None, {'sample_sha256': 'wrong', 'retrieved_utc': timestamp},
+                             {'sample_sha256': checksum},
+                             {'sample_sha256': checksum, 'retrieved_utc': '2026-11-15'},
+                             {'sample_sha256': checksum, 'retrieved_utc': 'invalid'},
+                             '{malformed'):
+                with self.subTest(metadata=metadata):
+                    if metadata is not None:
+                        source.with_suffix('.json').write_text(
+                            metadata if isinstance(metadata, str) else json.dumps(metadata),
+                            encoding='utf-8')
+                    path = report(self.records, tmp / 'report.html', 'St. Louis', 1500,
+                                  '2026-11-03', '2026-11-10', source=source)
+                    header = path.read_text(encoding='utf-8').split('</header>', 1)[0]
+                    self.assertIn('Snapshot age', header)
+                    self.assertIn('Unavailable', header)
+                    self.assertNotIn('<time ', header)
+
     @unittest.skipUnless(shutil.which('node'), 'Optional browser logic parity checks require Node.js')
     def test_browser_calculator_matches_python(self):
         cases = []
@@ -183,7 +206,13 @@ class FreightTests(unittest.TestCase):
                         pass  # Missing quotes are exercised explicitly by the JS check.
         with workspace_temp() as tmp:
             path = tmp/'report.html'
-            report(self.records, path, 'St. Louis', 1500, dates[-2], dates[-1])
+            source = tmp / 'sample.csv'
+            source.write_bytes(FIXTURE.read_bytes())
+            source.with_suffix('.json').write_text(json.dumps({
+                'sample_sha256': hashlib.sha256(source.read_bytes()).hexdigest(),
+                'retrieved_utc': '2026-11-15T20:28:07.700144+00:00',
+            }), encoding='utf-8')
+            report(self.records, path, 'St. Louis', 1500, dates[-2], dates[-1], source=source)
             (tmp/'cases.json').write_text(json.dumps(cases), encoding='utf-8')
             result = subprocess.run(['node', str(Path(__file__).with_name('ui_check.cjs')), str(path), str(tmp/'cases.json')],
                                     capture_output=True, text=True)
